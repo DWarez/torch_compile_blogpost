@@ -1,0 +1,118 @@
+buf0: ExternKernelSchedulerNode(ExternKernelOut)
+buf0.writes = [StarDep(name='buf0', mode=None)]
+buf0.unmet_dependencies = []
+buf0.met_dependencies = [StarDep(name='arg0_1', mode=None), StarDep(name='arg1_1', mode=None)]
+buf0.users = [NodeUser(node=SchedulerNode(name='buf1'), can_inplace=False, is_weak=False), NodeUser(node=SchedulerNode(name='buf2'), can_inplace=True, is_weak=False)]
+buf0.node.kernel = extern_kernels.mm
+
+
+buf1_buf2_buf3_buf4: OuterLoopFusedSchedulerNode(SchedulerNode,SchedulerNode,SchedulerNode,SchedulerNode)
+buf1_buf2_buf3_buf4.writes = 
+    [   MemoryDep('buf1', c0, {c0: 100}, None),
+        MemoryDep('buf2', c0, {c0: 10000}, None),
+        MemoryDep('buf3', c0, {c0: 100}, None),
+        MemoryDep('buf4', c0, {c0: 10000}, None)]
+buf1_buf2_buf3_buf4.unmet_dependencies = [MemoryDep('buf0', c0, {c0: 10000}, None)]
+buf1_buf2_buf3_buf4.met_dependencies = []
+buf1_buf2_buf3_buf4.users = []
+    buf1_buf2_buf3_buf4.snodes[0] =
+    buf1: SchedulerNode(ComputedBuffer)
+    buf1.writes = [MemoryDep('buf1', c0, {c0: 100}, None)]
+    buf1.unmet_dependencies = [MemoryDep('buf0', c0, {c0: 10000}, None)]
+    buf1.met_dependencies = []
+    buf1.users = [NodeUser(node=SchedulerNode(name='buf2'), can_inplace=False, is_weak=False)]
+    buf1.group.device = cpu
+    buf1.group.iteration = ((100,), (100,))
+    buf1.sizes = ([100], [100])
+    buf0_layout = FixedLayout('cpu', torch.float32, size=[100, 100], stride=[100, 1])
+    buf1_layout = FixedLayout('cpu', torch.float32, size=[100, 1], stride=[1, 100])
+    class buf1_loop_body:
+        var_ranges = {z0: 100, z1: 100}
+        index0 = 100*z0 + z1
+        index1 = z0
+        def body(self, ops):
+            get_index = self.get_index('index0')
+            load = ops.load('buf0', get_index)
+            reduction = ops.reduction(torch.float32, torch.float32, 'max', load)
+            get_index_1 = self.get_index('index1')
+            store_reduction = ops.store_reduction('buf1', get_index_1, reduction)
+            return store_reduction
+    buf1_buf2_buf3_buf4.snodes[1] =
+    buf2: SchedulerNode(ComputedBuffer)
+    buf2.writes = [MemoryDep('buf2', c0, {c0: 10000}, None)]
+    buf2.unmet_dependencies = 
+        [   MemoryDep('buf0', c0, {c0: 10000}, None),
+            MemoryDep('buf1', c0, {c0: 100}, None)]
+    buf2.met_dependencies = []
+    buf2.users = [NodeUser(node=SchedulerNode(name='buf3'), can_inplace=False, is_weak=False), NodeUser(node=SchedulerNode(name='buf4'), can_inplace=True, is_weak=False)]
+    buf2.group.device = cpu
+    buf2.group.iteration = ((100, 100), ())
+    buf2.sizes = ([100, 100], [])
+    buf0_layout = FixedLayout('cpu', torch.float32, size=[100, 100], stride=[100, 1])
+    buf1_layout = FixedLayout('cpu', torch.float32, size=[100, 1], stride=[1, 100])
+    buf2_layout = FixedLayout('cpu', torch.float32, size=[100, 100], stride=[100, 1])
+    class buf2_loop_body:
+        var_ranges = {z0: 100, z1: 100}
+        index0 = 100*z0 + z1
+        index1 = z0
+        def body(self, ops):
+            get_index = self.get_index('index0')
+            load = ops.load('buf0', get_index)
+            get_index_1 = self.get_index('index1')
+            load_1 = ops.load('buf1', get_index_1)
+            sub = ops.sub(load, load_1)
+            exp = ops.exp(sub)
+            get_index_2 = self.get_index('index0')
+            store = ops.store('buf2', get_index_2, exp, None)
+            return store
+    buf1_buf2_buf3_buf4.snodes[2] =
+    buf3: SchedulerNode(ComputedBuffer)
+    buf3.writes = [MemoryDep('buf3', c0, {c0: 100}, None)]
+    buf3.unmet_dependencies = [MemoryDep('buf2', c0, {c0: 10000}, None)]
+    buf3.met_dependencies = []
+    buf3.users = [NodeUser(node=SchedulerNode(name='buf4'), can_inplace=False, is_weak=False)]
+    buf3.group.device = cpu
+    buf3.group.iteration = ((100,), (100,))
+    buf3.sizes = ([100], [100])
+    buf2_layout = FixedLayout('cpu', torch.float32, size=[100, 100], stride=[100, 1])
+    buf3_layout = FixedLayout('cpu', torch.float32, size=[100, 1], stride=[1, 100])
+    class buf3_loop_body:
+        var_ranges = {z0: 100, z1: 100}
+        index0 = 100*z0 + z1
+        index1 = z0
+        def body(self, ops):
+            get_index = self.get_index('index0')
+            load = ops.load('buf2', get_index)
+            reduction = ops.reduction(torch.float32, torch.float32, 'sum', load)
+            get_index_1 = self.get_index('index1')
+            store_reduction = ops.store_reduction('buf3', get_index_1, reduction)
+            return store_reduction
+    buf1_buf2_buf3_buf4.snodes[3] =
+    buf4: SchedulerNode(ComputedBuffer)
+    buf4.writes = [MemoryDep('buf4', c0, {c0: 10000}, None)]
+    buf4.unmet_dependencies = 
+        [   MemoryDep('buf2', c0, {c0: 10000}, None),
+            MemoryDep('buf3', c0, {c0: 100}, None)]
+    buf4.met_dependencies = []
+    buf4.users = [NodeUser(node=OUTPUT, can_inplace=False, is_weak=False)]
+    buf4.group.device = cpu
+    buf4.group.iteration = ((100, 100), ())
+    buf4.sizes = ([100, 100], [])
+    buf3_layout = FixedLayout('cpu', torch.float32, size=[100, 1], stride=[1, 100])
+    buf2_layout = FixedLayout('cpu', torch.float32, size=[100, 100], stride=[100, 1])
+    buf4_layout = FixedLayout('cpu', torch.float32, size=[100, 100], stride=[100, 1])
+    class buf4_loop_body:
+        var_ranges = {z0: 100, z1: 100}
+        index0 = 100*z0 + z1
+        index1 = z0
+        def body(self, ops):
+            get_index = self.get_index('index0')
+            load = ops.load('buf2', get_index)
+            get_index_1 = self.get_index('index1')
+            load_1 = ops.load('buf3', get_index_1)
+            truediv = ops.truediv(load, load_1)
+            get_index_2 = self.get_index('index0')
+            store = ops.store('buf4', get_index_2, truediv, None)
+            return store
+
+
